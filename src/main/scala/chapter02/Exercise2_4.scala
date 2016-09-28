@@ -1,4 +1,4 @@
-package chapter01
+package chapter02
 
 /**
   * Created by prokosna on 16/09/27.
