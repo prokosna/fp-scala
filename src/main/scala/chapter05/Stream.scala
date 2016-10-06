@@ -14,6 +14,10 @@ trait Stream[+A] {
     }
   }
 
+  def headOption2: Option[A] = {
+    foldRight(None: Option[A])((a, _) => Some(a))
+  }
+
   def toList: List[A] = {
     @annotation.tailrec
     def go(a: Stream[A], l: List[A]): List[A] = {
@@ -70,7 +74,27 @@ trait Stream[+A] {
   }
 
   def takeWhile2(p: A => Boolean): Stream[A] = {
-    foldRight(empty[A])((a, b) => if(p(a)) cons(a, b) else empty)
+    foldRight(empty[A])((a, b) => if (p(a)) cons(a, b) else empty)
+  }
+
+  def map[B](f: A => B): Stream[B] = {
+    foldRight(empty[B])((a, b) => cons(f(a), b))
+  }
+
+  def filter(f: A => Boolean): Stream[A] = {
+    foldRight(empty[A])((a, b) => if (f(a)) cons(a, b) else b)
+  }
+
+  def append[B >: A](a: => Stream[B]): Stream[B] = {
+    foldRight(a)((h, t) => cons(h, t))
+  }
+
+  def flatMap[B](f: A => Stream[B]): Stream[B] = {
+    foldRight(empty: Stream[B])((a, b) => f(a).append(b))
+  }
+
+  def find(p: A => Boolean): Option[A] = {
+    filter(p) headOption
   }
 }
 
@@ -90,6 +114,28 @@ object Stream {
   def apply[A](as: A*): Stream[A] = {
     if (as.isEmpty) empty
     else cons(as.head, apply(as.tail: _*))
+  }
+
+  def constant[A](a: A): Stream[A] = {
+    cons(a, constant(a))
+  }
+
+  def from(n: Int): Stream[Int] = {
+    cons(n, from(n + 1))
+  }
+
+  def fibs(): Stream[Int] = {
+    def loop(a: Int, b: Int): Stream[Int] = {
+      cons(a, loop(b, a + b))
+    }
+    loop(0, 1)
+  }
+
+  def unfold[A, S](z: S)(f: S => Option[(A, S)]): Stream[A] = {
+    f(z) match {
+      case Some((h, t)) => cons(h, unfold(t)(f))
+      case None => empty
+    }
   }
 }
 
